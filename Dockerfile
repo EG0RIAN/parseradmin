@@ -1,30 +1,25 @@
-# Use the official Python image
-FROM python:3.11-slim
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Base image
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Set the working directory
-WORKDIR /code
+# Set work directory
+WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt /code/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Install dependencies
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the project code
-COPY . /code/
+# Copy project
+COPY . /app/
 
-# Expose the port that Gunicorn will run on
+# Collect static files
+RUN python manage.py collectstatic --noinput
+
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Command to start the Gunicorn server
-CMD ["gunicorn", "parceradmin.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "parceradmin.wsgi:application"]
